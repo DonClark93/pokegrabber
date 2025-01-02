@@ -1,21 +1,20 @@
 import { Argument, Command } from 'commander';
 import * as fs from 'node:fs';
 
-let finalList = [];
+let finalListCSV = [];
+let finalListJSON = {};
 const program = new Command();
 program
     .name("pokegrabber")
-    .description("A Utility for grabbing pokemon details and converting to other file formats")
+    .description("A Utility for grabbing Pokemon details and converting to other file formats")
     .version("0.0.1")
-    .option('-d, --debug', 'output extra debugging')
-    .option('-o, --only', "only the number specified")
-    .option('-f, --file <string>', "type of file to export")
-    .requiredOption('-p, --poke <number>', 'get the pokemon up to provided number')
+    .option('-d, --debug', 'Output extra debugging information')
+    .option('-o, --only', "Only return information of Pokemon Specified")
+    .option('-f, --file <string>', "Type of file to export to")
+    .requiredOption('-p, --poke <number>', 'Get the information for all Pokemon up to provided number')
 program.parse();
 
 const options = program.opts();
-
-if (options.debug) console.log(options);
 
 async function getPokemon(i){
 
@@ -68,87 +67,113 @@ function breakDownAbilities(pokeabilities){
     return tempString;
 }
 
-function breakDownSpecies(pokespecies){
-    let tempString = "";
-    console.log(pokespecies)
-    for(const x of pokespecies){
-        tempString += x;
-        if(x.ability){
-            tempString += ",";
-        }
-    }
-    console.log(tempString);
-    return tempString;
-}
-
 function breakDownHeldItems(pokehelditems){
     let tempString = "";
-    console.log(pokehelditems)
     for(const x of pokehelditems){
         tempString += x+",";
-        
     }
-    console.log(tempString);
-    return tempString;
+    return "none";
 }
 
 function breakDownStats(pokestats){
     let tempString = "";
-    console.log(pokestats)
     for(const x of pokestats){
-        tempString += x + ",";
-        
+        tempString += x.base_stat + ",";
     }
-    console.log(tempString);
+    return tempString;
+}
+
+function breakDownEggGroup(pokeegg){
+    let tempString = "";
+    for(const x of pokeegg){
+        tempString += x.name + ",";
+    }
     return tempString;
 }
 
 function convertToCSV(tempPokemon){
-    console.log(tempPokemon)
+
     return tempPokemon.details.name + "," + 
             breakDownTypes(tempPokemon.details.types) + 
             tempPokemon.details.height + "," + 
             tempPokemon.details.weight + "," + 
             breakDownAbilities(tempPokemon.details.abilities) + 
             tempPokemon.details.species.name + "," + 
-            tempPokemon.details.held_items + "," + 
-            tempPokemon.details.base_experience + "," + 
-            tempPokemon.details.stats + "," + 
-            tempPokemon.details.egg_groups + "," + 
-            tempPokemon.details.evolves_from_species + "," + 
-            tempPokemon.details.generation + "," + 
-            tempPokemon.details.is_baby + "," + 
-            tempPokemon.details.is_legendary + "," + 
-            tempPokemon.details.is_mythical;
+            breakDownHeldItems(tempPokemon.details.heldItems) + "," + 
+            tempPokemon.details.baseExp + "," + 
+            breakDownStats(tempPokemon.details.stats) + 
+            breakDownEggGroup(tempPokemon.details.eggGroups) + 
+            /*tempPokemon.details.evolvesFromSpecies.name*/"test" + "," + 
+            tempPokemon.details.generation.name + "," + 
+            tempPokemon.details.isBaby + "," + 
+            tempPokemon.details.isLegendary + "," + 
+            tempPokemon.details.isMythical;
 }
+
+function convertToJSON(tempPokemon){
+
+    let test =  {"pokeNumber1w2": "test3",
+                 }
+            
+    return test
+}
+function convertToJSON1(tempPokemon){
+
+    let test =  {"pokeNumber12": "test31",
+                 }
+            
+    return test
+}
+
+if (options.debug){ 
+    console.log(options)
+};
+
+//options
 
 if (options.only == true){
 
-    finalList.push( await getPokemon(options.poke));
-
     if(options.file == "csv"){
-        let file = JSON.stringify(convertToCSV(finalList[0]))
-
-        fs.appendFile('pokedex.csv', file, (err) => {
-            console.log("ddd")
-            if (err) throw err;
-            console.log(err)
-        })
-    
+        finalListCSV.push( convertToCSV(await getPokemon(options.poke)));
+    }
+    if(options.file == "json"){
+        finalListJSON = { ...finalListJSON, "New":convertToJSON(await getPokemon(options.poke))};
+        finalListJSON = { ...finalListJSON, "New2":convertToJSON1(await getPokemon(options.poke))};
     }
 
 }else{
 
-    for(let i = 1; i <= options.poke; i++){
-        finalList.push(await getPokemon(i));
-    }
-
     if(options.file == "csv"){
-        
-        fs.writeFile('pokedex.csv')
-    
+        for(let i = 1; i <= options.poke; i++){
+            finalListCSV.push(convertToCSV(await getPokemon(i)));
+        }
     }
-
+    if(options.file == "json"){
+        for(let i = 1; i <= options.poke; i++){
+            finalListJSON.push(convertToCSV(await getPokemon(i)));
+        }
+    }
 }
 
-console.log(finalList);
+//writing to file
+
+if(options.file == "csv"){
+    
+    for( let i = 0; i < (finalListCSV.length); i++ ){
+        fs.appendFileSync('pokedex.csv', finalListCSV[i] +'\n', (err) => {
+            if (err) throw err;
+        })
+    }
+}
+
+if(options.file == "json"){
+
+        fs.appendFileSync('pokedex.json', JSON.stringify(finalListJSON), (err) => {
+            if (err) throw err;
+        })
+}
+
+
+
+
+console.log(finalListJSON);
