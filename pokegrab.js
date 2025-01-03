@@ -91,9 +91,11 @@ function breakDownEggGroup(pokeegg){
     return tempString;
 }
 
-function convertToCSV(tempPokemon){
+function convertToFile(file, tempPokemon){
 
-    return tempPokemon.details.name + "," + 
+    if(file == "csv"){
+        
+        return tempPokemon.details.name + "," + 
             breakDownTypes(tempPokemon.details.types) + 
             tempPokemon.details.height + "," + 
             tempPokemon.details.weight + "," + 
@@ -108,21 +110,31 @@ function convertToCSV(tempPokemon){
             tempPokemon.details.isBaby + "," + 
             tempPokemon.details.isLegendary + "," + 
             tempPokemon.details.isMythical;
-}
 
-function convertToJSON(tempPokemon){
-
-    let test =  {"pokeNumber1w2": "test3",
-                 }
+    }else if(file == "json"){
+        return {
+            id: tempPokemon.pokeNumber,
+            data : {
+                "name": tempPokemon.details.name,
+                "types": breakDownTypes(tempPokemon.details.types),
+                "height": tempPokemon.details.height ,
+                "weight": tempPokemon.details.weight ,
+                "abilities": breakDownAbilities(tempPokemon.details.abilities) ,
+                "species": tempPokemon.details.species.name,
+                "heldItems": breakDownHeldItems(tempPokemon.details.heldItems),
+                "baseExp": tempPokemon.details.baseExp ,
+                "stats": breakDownStats(tempPokemon.details.stats) ,
+                "eggGroups": breakDownEggGroup(tempPokemon.details.eggGroups)  ,
+                "evolvesFromSpecies": "test",
+                "generation": tempPokemon.details.generation.name ,
+                "isBaby": tempPokemon.details.isBaby,
+                "isLegendary": tempPokemon.details.isLegendary ,
+                "isMythical": tempPokemon.details.isMythical,
+            }
             
-    return test
-}
-function convertToJSON1(tempPokemon){
+        }   
+    }
 
-    let test =  {"pokeNumber12": "test31",
-                 }
-            
-    return test
 }
 
 if (options.debug){ 
@@ -134,23 +146,24 @@ if (options.debug){
 if (options.only == true){
 
     if(options.file == "csv"){
-        finalListCSV.push( convertToCSV(await getPokemon(options.poke)));
+        finalListCSV.push( convertToFile(options.file, await getPokemon(options.poke)));
     }
     if(options.file == "json"){
-        finalListJSON = { ...finalListJSON, "New":convertToJSON(await getPokemon(options.poke))};
-        finalListJSON = { ...finalListJSON, "New2":convertToJSON1(await getPokemon(options.poke))};
+        let temppoke = convertToFile( options.file , await getPokemon(options.poke))
+        finalListJSON = { ...finalListJSON, [temppoke.data.name]: temppoke};
     }
 
 }else{
 
     if(options.file == "csv"){
         for(let i = 1; i <= options.poke; i++){
-            finalListCSV.push(convertToCSV(await getPokemon(i)));
+            finalListCSV.push( convertToFile(options.file, await getPokemon(i)));
         }
     }
     if(options.file == "json"){
         for(let i = 1; i <= options.poke; i++){
-            finalListJSON.push(convertToCSV(await getPokemon(i)));
+            let temppoke = convertToFile( options.file , await getPokemon(i))
+            finalListJSON = { ...finalListJSON, [temppoke.data.name]: temppoke};
         }
     }
 }
