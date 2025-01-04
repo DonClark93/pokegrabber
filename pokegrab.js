@@ -1,6 +1,6 @@
 import { Argument, Command } from 'commander';
 import * as fs from 'node:fs';
-
+const CSVHEADER = "name,type1,type2,height,weight,abilities,species,heldItems,baseExp,hp,attack,defense,specialAttack,specialDefense,speed,eggGroup,evolvesFrom,gen,isBaby,isLegendary,isMythical"
 let finalListCSV = [];
 let finalListJSON = {};
 const program = new Command();
@@ -47,11 +47,16 @@ async function getPokemon(i){
 
 function breakDownTypesCSV(poketypes){
     let tempString = "";
+    let i = 0;
     for(const x of poketypes){
+        i++;
         tempString += x.type.name;
         if(x.type.name){
             tempString += ",";
         }
+    }
+    if(i==1){
+        tempString += ",";
     }
     return tempString;
 }
@@ -91,6 +96,15 @@ function breakDownEggGroupCSV(pokeegg){
     return tempString;
 }
 
+function breakDownEvolveFromCSV(egggroup){
+    console.log(egggroup)
+    if (egggroup != null){
+        return egggroup.name;
+    }else{
+        return null
+    }
+}
+
 function breakDownTypesJSON(poketypes){
     let tempdata = {};
     for(const x of poketypes){
@@ -104,7 +118,7 @@ function breakDownAbilitiesJSON(pokeabilities){
     let i = 0;
     for(const x of pokeabilities){
         i++
-        console.log(x)
+
         tempdata = { ...tempdata, [`ability-${i}`]:{
             "ability-name":x.ability.name,
             "hidden":x.is_hidden
@@ -114,27 +128,42 @@ function breakDownAbilitiesJSON(pokeabilities){
 }
 
 function breakDownHeldItemsJSON(pokehelditems){
-    let tempString = "";
+    let tempdata = {};
     for(const x of pokehelditems){
-        tempString += x+",";
+        tempdata = {}
     }
     return "none";
 }
 
 function breakDownStatsJSON(pokestats){
-    let tempString = "";
+    let tempdata = {};
     for(const x of pokestats){
-        tempString += x.base_stat + ",";
+        tempdata = {...tempdata, [`${x.stat.name}`]: {
+            "base": x.base_stat,
+            "ev": x.effort
+        }};
     }
-    return tempString;
+    return tempdata;
 }
 
 function breakDownEggGroupJSON(pokeegg){
-    let tempString = "";
+    let tempdata = {};
+    let i = 0;
     for(const x of pokeegg){
-        tempString += x.name + ",";
+        i++;
+        tempdata = {...tempdata, 
+            [`type-${i}`]: x.name,
+         } ;
     }
-    return tempString;
+    return tempdata;
+}
+
+function breakDownEvolveFromJSON(egggroup){
+    if (egggroup != null){
+        return egggroup.name;
+    }else{
+        return null
+    }
 }
 
 function convertToFile(file, tempPokemon){
@@ -151,7 +180,7 @@ function convertToFile(file, tempPokemon){
             tempPokemon.details.baseExp + "," + 
             breakDownStatsCSV(tempPokemon.details.stats) + 
             breakDownEggGroupCSV(tempPokemon.details.eggGroups) + 
-            /*tempPokemon.details.evolvesFromSpecies.name*/"test" + "," + 
+            breakDownEvolveFromCSV(tempPokemon.details.evolvesFromSpecies) + "," + 
             tempPokemon.details.generation.name + "," + 
             tempPokemon.details.isBaby + "," + 
             tempPokemon.details.isLegendary + "," + 
@@ -171,7 +200,7 @@ function convertToFile(file, tempPokemon){
                 "baseExp": tempPokemon.details.baseExp ,
                 "stats": breakDownStatsJSON(tempPokemon.details.stats) ,
                 "eggGroups": breakDownEggGroupJSON(tempPokemon.details.eggGroups)  ,
-                "evolvesFromSpecies": "test",
+                "evolvesFromSpecies": breakDownEvolveFromJSON(tempPokemon.details.evolvesFromSpecies),
                 "generation": tempPokemon.details.generation.name ,
                 "isBaby": tempPokemon.details.isBaby,
                 "isLegendary": tempPokemon.details.isLegendary ,
